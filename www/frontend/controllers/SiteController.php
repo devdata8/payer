@@ -1,13 +1,17 @@
 <?php
+
 namespace frontend\controllers;
 
+use common\models\Payment;
 use Yii;
 use yii\base\InvalidParamException;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
 use common\models\LoginForm;
+use common\models\User;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
@@ -26,22 +30,22 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout', 'signup'],
+                'only'  => ['logout', 'signup'],
                 'rules' => [
                     [
                         'actions' => ['signup'],
-                        'allow' => true,
-                        'roles' => ['?'],
+                        'allow'   => true,
+                        'roles'   => ['?'],
                     ],
                     [
                         'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
                     ],
                 ],
             ],
-            'verbs' => [
-                'class' => VerbFilter::className(),
+            'verbs'  => [
+                'class'   => VerbFilter::className(),
                 'actions' => [
                     'logout' => ['post'],
                 ],
@@ -55,11 +59,11 @@ class SiteController extends Controller
     public function actions()
     {
         return [
-            'error' => [
+            'error'   => [
                 'class' => 'yii\web\ErrorAction',
             ],
             'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
+                'class'           => 'yii\captcha\CaptchaAction',
                 'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
@@ -72,7 +76,7 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $this->actionPay();
     }
 
     /**
@@ -85,7 +89,6 @@ class SiteController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
-
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
             return $this->goBack();
@@ -120,7 +123,8 @@ class SiteController extends Controller
         $model = new ContactForm();
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             if ($model->sendEmail(Yii::$app->params['adminEmail'])) {
-                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
+                Yii::$app->session->setFlash('success',
+                    'Thank you for contacting us. We will respond to you as soon as possible.');
             } else {
                 Yii::$app->session->setFlash('error', 'There was an error sending your message.');
             }
@@ -178,7 +182,8 @@ class SiteController extends Controller
 
                 return $this->goHome();
             } else {
-                Yii::$app->session->setFlash('error', 'Sorry, we are unable to reset password for the provided email address.');
+                Yii::$app->session->setFlash('error',
+                    'Sorry, we are unable to reset password for the provided email address.');
             }
         }
 
@@ -191,6 +196,7 @@ class SiteController extends Controller
      * Resets password.
      *
      * @param string $token
+     *
      * @return mixed
      * @throws BadRequestHttpException
      */
@@ -201,7 +207,6 @@ class SiteController extends Controller
         } catch (InvalidParamException $e) {
             throw new BadRequestHttpException($e->getMessage());
         }
-
         if ($model->load(Yii::$app->request->post()) && $model->validate() && $model->resetPassword()) {
             Yii::$app->session->setFlash('success', 'New password saved.');
 
@@ -212,4 +217,55 @@ class SiteController extends Controller
             'model' => $model,
         ]);
     }
+
+    /**
+     * List all payers with last payment.
+     *
+     * @return mixed
+     */
+    public function actionPayers()
+    {
+        $model = User::find()
+            ->select(['id', 'username'])
+//            ->with('getPayments')
+            ->all();
+//        var_dump($model);
+//        var_dump($model[0]->id);
+//        var_dump($model[0]->username);
+//        var_dump($model[0]->getPayments());
+//        die('-d');
+        return $this->render('payers', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Displays Pay Form.
+     *
+     * @return mixed
+     */
+    public function actionPay()
+    {
+        $user = Yii::$app->getUser();
+        $model = new Payment();
+        $model->id_user_from = $user->id;
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Thank you for your payment!');
+            } else {
+                Yii::$app->session->setFlash('error', 'There was an error with your payment.');
+            }
+
+            return $this->refresh();
+        } else {
+            $users = User::find()->where('id != :id', ['id' => $model->id_user_from])->all();
+            $users = ArrayHelper::map($users, 'id', 'username');
+            return $this->render('pay', [
+                'user'  => $user,
+                'model' => $model,
+                'users' => $users,
+            ]);
+        }
+    }
+
 }
