@@ -15,7 +15,6 @@ use common\models\User;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
-use frontend\models\ContactForm;
 
 /**
  * Site controller
@@ -114,40 +113,6 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays contact page.
-     *
-     * @return mixed
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            if ($model->sendEmail(Yii::$app->params['adminEmail'])) {
-                Yii::$app->session->setFlash('success',
-                    'Thank you for contacting us. We will respond to you as soon as possible.');
-            } else {
-                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
-            }
-
-            return $this->refresh();
-        } else {
-            return $this->render('contact', [
-                'model' => $model,
-            ]);
-        }
-    }
-
-    /**
-     * Displays about page.
-     *
-     * @return mixed
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
-    }
-
-    /**
      * Signs user up.
      *
      * @return mixed
@@ -225,17 +190,18 @@ class SiteController extends Controller
      */
     public function actionPayers()
     {
-        $model = User::find()
-            ->select(['id', 'username'])
-//            ->with('getPayments')
-            ->all();
-//        var_dump($model);
-//        var_dump($model[0]->id);
-//        var_dump($model[0]->username);
-//        var_dump($model[0]->getPayments());
-//        die('-d');
+        $models = Yii::$app->db->createCommand(
+            "SELECT u.id as uid, u.username, p.*
+                  FROM payer.public.user u
+                  LEFT JOIN payer.public.payment p
+                    ON p.id=(SELECT p1.id FROM payer.public.payment p1
+                               WHERE p1.id_user_from=u.id
+                               ORDER BY p1.created_at DESC
+                               LIMIT 1)
+                               ORDER BY u.username")
+            ->queryAll();
         return $this->render('payers', [
-            'model' => $model,
+            'model' => $models,
         ]);
     }
 
@@ -250,6 +216,7 @@ class SiteController extends Controller
         $model = new Payment();
         $model->id_user_from = $user->id;
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $model->deferred_time = Yii::$app->formatter->asTimestamp($model->deferred_time, 'dd-MM-yyyy H:mm');
             $model->created_at = time();
             $model->updated_at = time();
             if ($model->save()) {
@@ -263,7 +230,6 @@ class SiteController extends Controller
                 } else {
                     Yii::$app->session->setFlash('error', 'Payment saved but have problem user balance. Error 2');
                 }
-
             } else {
                 Yii::$app->session->setFlash('error', 'There was an error with your payment.');
             }
@@ -272,6 +238,7 @@ class SiteController extends Controller
         } else {
             $users = User::find()->where('id != :id', ['id' => $model->id_user_from])->all();
             $users = ArrayHelper::map($users, 'id', 'username');
+
             return $this->render('pay', [
                 'user'  => $user,
                 'model' => $model,

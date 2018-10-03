@@ -2,7 +2,6 @@
 
 namespace common\models;
 
-use Yii;
 use app\components\StatusValidator;
 
 /**
@@ -13,9 +12,9 @@ use app\components\StatusValidator;
  * @property int    $id_user_to
  * @property int    $status
  * @property double $amount
- * @property string $deferred_time
- * @property string $created_at
- * @property string $updated_at
+ * @property int    $deferred_time
+ * @property int    $created_at
+ * @property int    $updated_at
  *
  * @property User   $userFrom
  * @property User   $userTo
@@ -44,33 +43,7 @@ class Payment extends \yii\db\ActiveRecord
             [['id_user_from', 'id_user_to'], 'default', 'value' => null],
             [['id_user_from', 'id_user_to', 'status'], 'integer'],
             [['amount'], 'number'],
-//            ['amount', 'compare', 'compareValue' => 30, 'operator' => '<=', 'type' => 'number'],
-//            ['amount', 'compare', 'compareValue' => function ($model) {return $model->id;}, 'operator' => '<=', 'type' => 'number'],
-//            [['amount'],'number','max'=>100, 'when' => function($model) {
-//                return $model->amount == 200;
-//            }, 'whenClient' => "function (attribute, value) {
-//            return $('#amount').val() == '300';
-//        }"],
-
-//            ['amount', function ($attribute, $params) {
-//                if ($this->$attribute<=$this->id_user_from) {
-//                    $this->addError($attribute,
-//                        'Amount of your pay more then Sum of your current balance and deferred balance.');
-//                } else {
-//                        $this->addError($attribute,
-//                            'Amount of your pay more then Sum of your current balance and deferred balance.'
-//                            .print_r($this->$attribute,true).' - '.print_r($params,true)
-//                            .' - '.print_r($this->id_user_from,true)
-//                            .' - '.print_r(($this->$attribute<=$this->id_user_from),true)
-//                        );
-//                }
-//            }],
             ['amount', 'validateAmount'],
-//            ['amount', 'validateChildrenFunds', 'when' => function ($model) {
-//                return $model->amount > 0;
-//            }],
-//            ['amount', 'validateChildrenFunds'],
-//            ['amount', 'validatePassword'],
             [['deferred_time', 'created_at', 'updated_at'], 'safe'],
             [
                 ['id_user_from'],
@@ -90,16 +63,24 @@ class Payment extends \yii\db\ActiveRecord
     }
 
     /**
-     * Validate amount before add payment
+     * Validate amount before add payment or try processing
      */
     public function validateAmount($attribute, $params)
     {
         $user = $this->userFrom;
-
-        $allowAmount = $user->balance - $user->deferred_balance;
-        if ($this->$attribute>$allowAmount) {
-            $this->addError($attribute,
-                'Amount your pay more then allowed balance. Max allow amount: '.$allowAmount);
+        if( $this->isNewRecord) {
+            $allowAmount = $user->balance - $user->deferred_balance;
+        } else {
+            $allowAmount = $user->balance;
+        }
+        if ($this->$attribute > $allowAmount) {
+            if( $this->isNewRecord) {
+                $this->addError($attribute,
+                    'Amount your pay more then allowed balance for pays. Max allow amount: '.$allowAmount);
+            } else {
+                $this->addError($attribute,
+                    'Amount current pay more then allowed balance. Balance: '.$allowAmount);
+            }
         }
     }
 

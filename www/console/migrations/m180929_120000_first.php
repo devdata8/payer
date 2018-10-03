@@ -15,13 +15,13 @@ class m180929_120000_first extends Migration
         $this->createTable('{{%user}}', [
             'id'                   => $this->primaryKey(),
             'username'             => $this->string()->notNull()->unique(),
-            'balance'              => $this->float()->notNull()->defaultValue(0),
-            'deferred_balance'     => $this->float()->notNull()->defaultValue(0),
             'auth_key'             => $this->string(32)->notNull(),
             'password_hash'        => $this->string()->notNull(),
             'password_reset_token' => $this->string()->unique(),
             'email'                => $this->string()->notNull()->unique(),
             'status'               => $this->smallInteger()->notNull()->defaultValue(10),
+            'balance'              => $this->float()->notNull()->defaultValue(0),
+            'deferred_balance'     => $this->float()->notNull()->defaultValue(0),
             'created_at'           => $this->integer()->notNull(),
             'updated_at'           => $this->integer()->notNull(),
         ], $tableOptions);
@@ -32,7 +32,7 @@ class m180929_120000_first extends Migration
             'id_user_to'    => $this->integer()->notNull(),
             'status'        => $this->integer()->notNull()->defaultValue(1),
             'amount'        => $this->float()->notNull(),
-            'deferred_time' => $this->timestamp()->notNull(),
+            'deferred_time' => $this->integer()->notNull(),
             'created_at'    => $this->integer()->notNull(),
             'updated_at'    => $this->integer()->notNull(),
         ], $tableOptions);
@@ -57,7 +57,7 @@ class m180929_120000_first extends Migration
         $this->insert('{{%user}}', [
             'id'                   => 5,
             'username'             => 'ros',
-            'balance'              => '500',
+            'balance'              => '900',
             'deferred_balance'     => '0',
             'auth_key'             => 'vCoX6JH1mfpu59AYo7UaDhhvNluC_9ue',
             'password_hash'        => '$2y$13$QlTz2hR6u03BprLXiX.Iz.1RH7UG28NlAYyrUveyDumU4P305XZNq',
@@ -70,7 +70,7 @@ class m180929_120000_first extends Migration
         $this->insert('{{%user}}', [
             'id'                   => 6,
             'username'             => 'user1',
-            'balance'              => '1000',
+            'balance'              => '100',
             'deferred_balance'     => '0',
             'auth_key'             => 'OYrmOt4Gku8beqXNpJKjCD145cwXJEsz',
             'password_hash'        => '$2y$13$y7pjE.WcclVgfvj2IjByruFC7vUcRrsvClFwtOHdW/px16vRY53/W',
@@ -83,7 +83,7 @@ class m180929_120000_first extends Migration
         $this->insert('{{%user}}', [
             'id'                   => 7,
             'username'             => 'user2',
-            'balance'              => '200',
+            'balance'              => '0',
             'deferred_balance'     => '0',
             'auth_key'             => 'SHkmikvlz46XoD8GHhWuuxPswQO98NyS',
             'password_hash'        => '$2y$13$tHTHsD1xphiDe6jn2nu/Xek4.wo5uNwwgEGutiYgLrf6bWSTqo/86',
