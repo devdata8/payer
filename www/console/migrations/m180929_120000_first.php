@@ -22,8 +22,8 @@ class m180929_120000_first extends Migration
             'password_reset_token' => $this->string()->unique(),
             'email'                => $this->string()->notNull()->unique(),
             'status'               => $this->smallInteger()->notNull()->defaultValue(10),
-            'created_at'           => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at'           => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at'           => $this->integer()->notNull(),
+            'updated_at'           => $this->integer()->notNull(),
         ], $tableOptions);
         // add table `payment`
         $this->createTable('{{%payment}}', [
@@ -33,8 +33,8 @@ class m180929_120000_first extends Migration
             'status'        => $this->integer()->notNull()->defaultValue(1),
             'amount'        => $this->float()->notNull(),
             'deferred_time' => $this->timestamp()->notNull(),
-            'created_at'    => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at'    => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at'    => $this->integer()->notNull(),
+            'updated_at'    => $this->integer()->notNull(),
         ], $tableOptions);
         // add foreign key for table `payment`
         $this->addForeignKey(
@@ -64,8 +64,8 @@ class m180929_120000_first extends Migration
             'password_reset_token' => null,
             'email'                => 'rrsrusakov@gmail.com',
             'status'               => 10,
-            'created_at'           => '2018-09-30 14:01:11',
-            'updated_at'           => '2018-09-30 14:01:11',
+            'created_at'           => time(),
+            'updated_at'           => time(),
         ]);
         $this->insert('{{%user}}', [
             'id'                   => 6,
@@ -77,8 +77,8 @@ class m180929_120000_first extends Migration
             'password_reset_token' => null,
             'email'                => 'user1@test.lo',
             'status'               => 10,
-            'created_at'           => '2018-09-30 14:02:11',
-            'updated_at'           => '2018-09-30 14:02:11',
+            'created_at'           => time(),
+            'updated_at'           => time(),
         ]);
         $this->insert('{{%user}}', [
             'id'                   => 7,
@@ -90,8 +90,8 @@ class m180929_120000_first extends Migration
             'password_reset_token' => null,
             'email'                => 'user2@test.lo',
             'status'               => 10,
-            'created_at'           => '2018-09-30 14:03:11',
-            'updated_at'           => '2018-09-30 14:03:11',
+            'created_at'           => time(),
+            'updated_at'           => time(),
         ]);
     }
 
@@ -99,7 +99,11 @@ class m180929_120000_first extends Migration
     {
         // drops foreign key for table `payment`
         $this->dropForeignKey(
-            'fk-payment-id_user',
+            'fk-payment-id_user_from',
+            'payment'
+        );
+        $this->dropForeignKey(
+            'fk-payment-id_user_to',
             'payment'
         );
         // drops table `payment`

@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use app\components\StatusValidator;
 
 /**
  * This is the model class for table "payment".
@@ -43,6 +44,33 @@ class Payment extends \yii\db\ActiveRecord
             [['id_user_from', 'id_user_to'], 'default', 'value' => null],
             [['id_user_from', 'id_user_to', 'status'], 'integer'],
             [['amount'], 'number'],
+//            ['amount', 'compare', 'compareValue' => 30, 'operator' => '<=', 'type' => 'number'],
+//            ['amount', 'compare', 'compareValue' => function ($model) {return $model->id;}, 'operator' => '<=', 'type' => 'number'],
+//            [['amount'],'number','max'=>100, 'when' => function($model) {
+//                return $model->amount == 200;
+//            }, 'whenClient' => "function (attribute, value) {
+//            return $('#amount').val() == '300';
+//        }"],
+
+//            ['amount', function ($attribute, $params) {
+//                if ($this->$attribute<=$this->id_user_from) {
+//                    $this->addError($attribute,
+//                        'Amount of your pay more then Sum of your current balance and deferred balance.');
+//                } else {
+//                        $this->addError($attribute,
+//                            'Amount of your pay more then Sum of your current balance and deferred balance.'
+//                            .print_r($this->$attribute,true).' - '.print_r($params,true)
+//                            .' - '.print_r($this->id_user_from,true)
+//                            .' - '.print_r(($this->$attribute<=$this->id_user_from),true)
+//                        );
+//                }
+//            }],
+            ['amount', 'validateAmount'],
+//            ['amount', 'validateChildrenFunds', 'when' => function ($model) {
+//                return $model->amount > 0;
+//            }],
+//            ['amount', 'validateChildrenFunds'],
+//            ['amount', 'validatePassword'],
             [['deferred_time', 'created_at', 'updated_at'], 'safe'],
             [
                 ['id_user_from'],
@@ -59,6 +87,20 @@ class Payment extends \yii\db\ActiveRecord
                 'targetAttribute' => ['id_user_to' => 'id'],
             ],
         ];
+    }
+
+    /**
+     * Validate amount before add payment
+     */
+    public function validateAmount($attribute, $params)
+    {
+        $user = $this->userFrom;
+
+        $allowAmount = $user->balance - $user->deferred_balance;
+        if ($this->$attribute>$allowAmount) {
+            $this->addError($attribute,
+                'Amount your pay more then allowed balance. Max allow amount: '.$allowAmount);
+        }
     }
 
     /**

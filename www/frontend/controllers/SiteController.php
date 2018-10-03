@@ -76,7 +76,7 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $this->actionPay();
+        return $this->render('index');
     }
 
     /**
@@ -250,8 +250,20 @@ class SiteController extends Controller
         $model = new Payment();
         $model->id_user_from = $user->id;
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $model->created_at = time();
+            $model->updated_at = time();
             if ($model->save()) {
-                Yii::$app->session->setFlash('success', 'Thank you for your payment!');
+                $user->identity->deferred_balance += $model->amount;
+                if ($user->identity->validate()) {
+                    if ($user->identity->save()) {
+                        Yii::$app->session->setFlash('success', 'Thank you for your payment!');
+                    } else {
+                        Yii::$app->session->setFlash('error', 'Payment saved but have problem user balance. Error 1');
+                    }
+                } else {
+                    Yii::$app->session->setFlash('error', 'Payment saved but have problem user balance. Error 2');
+                }
+
             } else {
                 Yii::$app->session->setFlash('error', 'There was an error with your payment.');
             }
